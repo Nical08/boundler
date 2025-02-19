@@ -10,28 +10,47 @@ import { sha256 } from "js-sha256";
 
 import fs from "fs";
 
+
 export function getOrCreateKeypair(dir: string, keyName: string): Keypair {
-  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-  const authorityKey = dir + "/" + keyName + ".json";
+  // Verifica se la directory esiste; se non esiste, creala
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
+  }
+
+  const authorityKey = `${dir}/${keyName}.json`;
+
+  // Se il file della chiave esiste, leggilo e crea il Keypair
   if (fs.existsSync(authorityKey)) {
-    const data: {
-      secretKey: string;
-      publicKey: string;
-    } = JSON.parse(fs.readFileSync(authorityKey, "utf-8"));
-    return Keypair.fromSecretKey(bs58.decode(data.secretKey));
+    try {
+      const data = JSON.parse(fs.readFileSync(authorityKey, 'utf-8'));
+      if (data && data.secretKey) {
+        return Keypair.fromSecretKey(bs58.decode(data.secretKey));
+      } else {
+        throw new Error('Il file esiste ma non contiene una secretKey valida.');
+      }
+    } catch (error) {
+      console.error(`Errore durante la lettura del file ${authorityKey}:`, error);
+      throw error;
+    }
   } else {
+    // Se il file non esiste, crea un nuovo Keypair e salva le chiavi nel file
     const keypair = Keypair.generate();
-    keypair.secretKey;
-    fs.writeFileSync(
-      authorityKey,
-      JSON.stringify({
-        secretKey: bs58.encode(keypair.secretKey),
-        publicKey: keypair.publicKey.toBase58(),
-      })
-    );
-    return keypair;
+    const data = {
+      secretKey: bs58.encode(keypair.secretKey),
+      publicKey: keypair.publicKey.toBase58(),
+    };
+
+    try {
+      fs.writeFileSync(authorityKey, JSON.stringify(data, null, 2), 'utf-8');
+      console.log(`File della chiave creato: ${authorityKey}`);
+      return keypair;
+    } catch (error) {
+      console.error(`Errore durante la scrittura del file ${authorityKey}:`, error);
+      throw error;
+    }
   }
 }
+
 
 export const printSOLBalance = async (
   connection: Connection,

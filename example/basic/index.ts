@@ -14,6 +14,7 @@ import {
 import metadata from "../../src/metadata";
 import { bs58 } from "@coral-xyz/anchor/dist/cjs/utils/bytes";
 
+
 const KEYS_FOLDER = __dirname + "/.keys";
 const SLIPPAGE_BASIS_POINTS = 100n;
 
@@ -53,8 +54,9 @@ const main = async () => {
 
   const testAccount = getOrCreateKeypair(KEYS_FOLDER, "test-account");
   const buyer = getOrCreateKeypair(KEYS_FOLDER, "buyer");
-  
+  const buyer1 = getOrCreateKeypair(KEYS_FOLDER, "buyers");
   const mint = getOrCreateKeypair(KEYS_FOLDER, "mint");
+  
 
   await printSOLBalance(connection, testAccount.publicKey, "Test Account keypair");
   let sdk = new PumpFunSDK(provider);
@@ -87,9 +89,9 @@ const main = async () => {
     let createResults = await sdk.createAndBuy(
       testAccount,
       mint,
-      [testAccount, buyer],
+      [testAccount, buyer, buyer1],
       tokenMetadata,
-      BigInt(0.0001 * LAMPORTS_PER_SOL),
+      BigInt( currentSolBalance* LAMPORTS_PER_SOL-0.13),
       SLIPPAGE_BASIS_POINTS,
       {
         unitLimit: 5_000_000,

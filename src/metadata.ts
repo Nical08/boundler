@@ -1,7 +1,7 @@
 const metadata = {
-    "name": "Bolt token",
-    "symbol": "Bolt2",
-    "description": "Brave Veer & Bolt",
+    "name": "test 1 ",
+    "symbol": "tst",
+    "description": "oonly test",
     "image": "",
     "showName": true,
     "createdOn": "https://pump.fun",

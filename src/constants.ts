@@ -13,6 +13,6 @@ export const CHECK_WALLETWHITELIST=false
 export const CHECK_WALLETBLACKLIST=false
 export const CHECK_SOLDBALANCE=true
 export const USE_SNIPE_LIST=false
-export const JITO_MODE = false
+export const JITO_MODE = true
 export const JITO_ALL = false
 export const stop_loss=-0.1

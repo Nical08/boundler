@@ -6,6 +6,7 @@ import {
   PublicKey,
   Transaction,
   VersionedTransaction,
+  BlockhashWithExpiryBlockHeight,
 } from "@solana/web3.js";
 import { Program, Provider } from "@coral-xyz/anchor";
 import { setGlobalDispatcher, Agent } from 'undici'
@@ -45,9 +46,10 @@ import {
 } from "./util";
 import { PumpFun, IDL } from "./IDL";
 import { getUploadedMetadataURI } from "./uploadToIpfs";
-import { jitoWithAxios } from "./jitoWithAxios";
 import { RPC_ENDPOINT, RPC_WEBSOCKET_ENDPOINT } from "./constants";
 import { global_mint } from "./config";
+import { JitoTransactionExecutor } from "./jito-rpc-transaction-executor";
+import { BlockHeight } from "jito-ts/dist/gen/geyser/confirmed_block";
 
 const PROGRAM_ID = "6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P";
 const MPL_TOKEN_METADATA_PROGRAM_ID =
@@ -79,6 +81,7 @@ export class PumpFunSDK {
     commitment: Commitment = DEFAULT_COMMITMENT,
     finality: Finality = DEFAULT_FINALITY
   ) {
+  
     let tokenMetadata = await this.createTokenMetadata(createTokenMetadata);
 
     let createTx = await this.getCreateInstructions(
@@ -139,8 +142,10 @@ export class PumpFunSDK {
       finality
     );
     let result;
+    const latestBlockhash: BlockhashWithExpiryBlockHeight = await this.connection.getLatestBlockhash();
     while(1) {
-      result = await jitoWithAxios([createVersionedTx, ...buyTxs], creator);
+      result = new JitoTransactionExecutor(0.005,this.connection);
+      result.executeAndConfirm([createVersionedTx, ...buyTxs], creator,latestBlockhash);
       if (result.confirmed) break;
     }
 
