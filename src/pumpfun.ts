@@ -81,7 +81,6 @@ export class PumpFunSDK {
     commitment: Commitment = DEFAULT_COMMITMENT,
     finality: Finality = DEFAULT_FINALITY
   ) {
-  
     let tokenMetadata = await this.createTokenMetadata(createTokenMetadata);
 
     let createTx = await this.getCreateInstructions(
@@ -106,11 +105,10 @@ export class PumpFunSDK {
     );
 
     if (buyAmountSol > 0) {
-      for(let i = 0; i < buyers.length; i++)
-      {
-        const randomPercent = getRandomInt(10,25);
-        const buyAmountSolWithRandom = buyAmountSol / BigInt(100) * BigInt(randomPercent % 2 ? (100 + randomPercent) : (100 - randomPercent))
-    
+      for (let i = 0; i < buyers.length; i++) {
+        const randomPercent = getRandomInt(10, 25);
+        const buyAmountSolWithRandom = buyAmountSol / BigInt(100) * BigInt(randomPercent % 2 ? (100 + randomPercent) : (100 - randomPercent));
+
         let buyTx = await this.getBuyInstructionsBySolAmount(
           buyers[i].publicKey,
           mint.publicKey,
@@ -131,25 +129,24 @@ export class PumpFunSDK {
         buyTxs.push(buyVersionedTx);
       }
     }
-    
-    await sendTx(
-      this.connection,
-      newTx,
-      creator.publicKey,
-      [creator, mint],
-      priorityFees,
-      commitment,
-      finality
-    );
-    let result;
+
+    // Invia la transazione di creazione con Jito
     const latestBlockhash: BlockhashWithExpiryBlockHeight = await this.connection.getLatestBlockhash();
-    while(1) {
-      result = new JitoTransactionExecutor(0.005,this.connection);
-      result.executeAndConfirm([createVersionedTx, ...buyTxs], creator,latestBlockhash);
-      if (result.confirmed) break;
+    let jitoExecutor = new JitoTransactionExecutor(0.005, this.connection);
+    let createResult = await jitoExecutor.executeAndConfirm([createVersionedTx], creator, latestBlockhash);
+
+    if (!createResult.confirmed) {
+      throw new Error(`Create transaction failed: ${createResult.error}`);
     }
 
-    return result;
+    // Esegui e conferma le transazioni di acquisto
+    let buyResult = await jitoExecutor.executeAndConfirm(buyTxs, creator, latestBlockhash);
+
+    if (!buyResult.confirmed) {
+      throw new Error(`Buy transactions failed: ${buyResult.error}`);
+    }
+
+    return { createResult, buyResult };
   }
 
   async buy(

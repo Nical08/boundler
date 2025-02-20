@@ -1,7 +1,7 @@
 const metadata = {
     "name": "test 1 ",
     "symbol": "tst",
-    "description": "oonly test",
+    "description": "oonly test proviene da file.ts",
     "image": "",
     "showName": true,
     "createdOn": "https://pump.fun",

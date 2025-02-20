@@ -47,14 +47,10 @@ export class JitoTransactionExecutor implements TransactionExecutor {
         payer: Keypair,
         latestBlockhash: BlockhashWithExpiryBlockHeight,
     ): Promise<{ confirmed: boolean; signature?: string; error?: string }> {
-        // logger.debug('Starting Jito transaction execution...');
         this.JitoFeeWallet = this.getRandomValidatorKey(); // Update wallet key each execution
-        // logger.trace(`Selected Jito fee wallet: ${this.JitoFeeWallet.toBase58()}`);
 
         try {
-            const fee = Math.floor(this.jitoFee * LAMPORTS_PER_SOL)
-            console.log(`Calculated fee: ${fee} lamports`);
-            
+            const fee = Math.floor(this.jitoFee * LAMPORTS_PER_SOL);
             const jitTipTxFeeMessage = new TransactionMessage({
                 payerKey: payer.publicKey,
                 recentBlockhash: latestBlockhash.blockhash,
@@ -71,14 +67,12 @@ export class JitoTransactionExecutor implements TransactionExecutor {
             jitoFeeTx.sign([payer]);
             const jitoTxsignature = bs58.encode(jitoFeeTx.signatures[0]);
 
-            // Serialize the transactions once here
             const serializedjitoFeeTx = bs58.encode(jitoFeeTx.serialize());
             let serializedTransactions = [serializedjitoFeeTx];
             for (let i = 0; i < transactionList.length; i++) {
                 serializedTransactions.push(bs58.encode(transactionList[i].serialize()));
             }
 
-            // https://jito-labs.gitbook.io/mev/searcher-resources/json-rpc-api-reference/url
             const endpoints = [
                 'https://mainnet.block-engine.jito.wtf/api/v1/bundles',
                 'https://frankfurt.mainnet.block-engine.jito.wtf/api/v1/bundles',
@@ -106,18 +100,14 @@ export class JitoTransactionExecutor implements TransactionExecutor {
                         },
                     ),
                 );
-    
-                // logger.trace('Sending transactions to endpoints...');
+
                 const results = await Promise.all(requests.map((p) => p.catch((e) => e)));
                 const successfulResults = results.filter((result) => !(result instanceof Error));
                 if (successfulResults.length > 0) {
-                    // logger.trace(`At least one successful response`);
-                    console.log(`Confirming...`);
                     return await this.confirm(jitoTxsignature, latestBlockhash);
                 }
             }
 
-          console.log(`No successful responses received for jito`);
             return { confirmed: false };
 
         } catch (error) {
@@ -125,20 +115,16 @@ export class JitoTransactionExecutor implements TransactionExecutor {
                 console.log({ error: error.response?.data }, 'Failed to execute jito transaction');
             }
             console.log('Error during transaction execution', error);
-           
-            console.log('Error during transaction execution');
-            
-            
-            return { confirmed: false };
+            return { confirmed: false, error: error.message };
         }
     }
 
     private async confirm(signature: string, latestBlockhash: BlockhashWithExpiryBlockHeight) {
         const confirmation = await this.connection.confirmTransaction(
             {
-                signature,
-                lastValidBlockHeight: latestBlockhash.lastValidBlockHeight,
+                signature,       
                 blockhash: latestBlockhash.blockhash,
+                lastValidBlockHeight: latestBlockhash.lastValidBlockHeight,
             },
             this.connection.commitment,
         );
