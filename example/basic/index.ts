@@ -54,7 +54,7 @@ const main = async () => {
 
   const testAccount = getOrCreateKeypair(KEYS_FOLDER, "test-account");
   const buyer = getOrCreateKeypair(KEYS_FOLDER, "buyer");
-  const buyer1 = getOrCreateKeypair(KEYS_FOLDER, "buyers");
+
   const mint = getOrCreateKeypair(KEYS_FOLDER, "mint");
   
 
@@ -89,9 +89,9 @@ const main = async () => {
     let createResults = await sdk.createAndBuy(
       testAccount,
       mint,
-      [testAccount, buyer, buyer1],
+      [buyer],
       tokenMetadata,
-      BigInt( currentSolBalance* LAMPORTS_PER_SOL-0.13),
+      BigInt( 0.03 * LAMPORTS_PER_SOL),
       SLIPPAGE_BASIS_POINTS,
       {
         unitLimit: 5_000_000,
@@ -99,17 +99,12 @@ const main = async () => {
       }
     );
 
-    if (createResults.confirmed) {
+    
       console.log("Success:", `https://pump.fun/${mint.publicKey.toBase58()}`);
-      console.log(createResults.jitoTxsignature);
+
       boundingCurveAccount = await sdk.getBondingCurveAccount(mint.publicKey);
       console.log("Bonding curve after create and buy", boundingCurveAccount);
       printSPLBalance(connection, mint.publicKey, testAccount.publicKey);
-    }
-  } else {
-    console.log("boundingCurveAccount", boundingCurveAccount);
-    console.log("Success:", `https://pump.fun/${mint.publicKey.toBase58()}`);
-    printSPLBalance(connection, mint.publicKey, testAccount.publicKey);
   }
 };
 
